@@ -21,6 +21,7 @@ var fileName = "data.csv"  // file data formatnya CSV
 
 func main() {
 	createFile(fileName)
+	LoadDataFromCSV(fileName)
 
 	for {
 		fmt.Println(strings.Repeat("=", 50))
@@ -40,19 +41,23 @@ func main() {
 		scanner.Scan()
 		answer := scanner.Text()
 		if strings.Contains(answer, "1") || strings.Contains(answer, strings.ToLower("View")) {
-			err := LoadDataFromCSV(fileName)
+			err := viewAllBooks()
 			if err != nil { fmt.Println(err) }
-			viewAllBooks()
+			
 		} else if strings.Contains(answer, "2") || strings.Contains(answer, strings.ToLower("Add")) {
 			err := addNewBook()
 			if err != nil { fmt.Println(err) }
+
 		} else if strings.Contains(answer, "3") || strings.Contains(answer, strings.ToLower("Update")) {
 			err := UpdateBook()
 			if err != nil { fmt.Println(err) }
+
 		} else if strings.Contains(answer, "4") || strings.Contains(answer, strings.ToLower("Delete")) {
 			err := DeleteBook()
 			if err != nil { fmt.Println(err) }
+
 		} else {
+			fmt.Println("Good bye!")
 			os.Exit(0)
 		}
 	}
@@ -87,6 +92,10 @@ func addNewBook() error {
 	fmt.Print("Book Id: ")
 	scanner.Scan()
 	newBook.Id, _ = strconv.Atoi(scanner.Text())
+	_, err := FindBookById(newBook.Id)
+	if err == nil {
+		return fmt.Errorf("book with id: %d already exists", newBook.Id)
+	}
 
 	fmt.Print("Book Title: ")
 	scanner.Scan()
@@ -104,12 +113,11 @@ func addNewBook() error {
 	scanner.Scan()
 	newBook.Pages, _ = strconv.Atoi(scanner.Text())
 
-	_, err := FindBookById(newBook.Id)
+	_, err = FindBookById(newBook.Id)
 	if err != nil {
 		books = append(books, newBook)
 		} else {
 		return fmt.Errorf("book with id: %d already exists", newBook.Id)
-		// return errors.New("book with id:"+ strconv.Itoa(newBook.Id)+ "already exists")
 	}
 
 	fmt.Print("Are you sure you want to add this book? (y/n) ")
@@ -128,8 +136,8 @@ func addNewBook() error {
 }
 
 func SaveDataToCSV(fileName string) error {
-	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_RDWR, 0666)
-	// file, err := os.Create(fileName)
+	// file, err := os.OpenFile(fileName, os.O_APPEND|os.O_RDWR, 0666)
+	file, err := os.Create(fileName)
 	if err != nil {
 		return fmt.Errorf("error opening csv file: %w", err)
 	}
@@ -187,34 +195,8 @@ func LoadDataFromCSV(fileName string) error {
 }
 
 func UpdateBook() error {
-	file, err := os.Open(fileName)
-	if err != nil {
-		return fmt.Errorf("unable to update a book, file not found %w", err)
-	}
-	defer file.Close()
-
-	// baca isi file data csv
-	scanner := bufio.NewScanner(file)
-	// lakukan pembacaan data per baris berulang-ulang
-	for scanner.Scan() {
-		row := strings.Split(scanner.Text(), ",")
-		// row := scanner.Text()
-		// fmt.Printf("%T\n", row)
-		id, _ := strconv.Atoi(row[0])
-		pages, _ := strconv.Atoi(row[4])
-		book := Book{
-			Id: id,
-			Title: row[1],
-			Author: row[2],
-			ReleaseYear: row[3],
-			Pages: pages,
-		}
-		books = append(books, book)
-		// fmt.Println(books)
-	}
-	
 	// masukin id buku yang mau diganti detailnya
-	scanner = bufio.NewScanner(os.Stdin)
+	scanner := bufio.NewScanner(os.Stdin)
 	
 	fmt.Print("Enter book id that you want to change: ")
 	scanner.Scan()
@@ -270,7 +252,7 @@ func UpdateBook() error {
 			}
 
 			// overwrite the csv file
-			file, err = os.OpenFile(fileName, os.O_TRUNC|os.O_RDWR, 0666)
+			file, err := os.OpenFile(fileName, os.O_TRUNC|os.O_RDWR, 0666)
 			if err != nil {
 				return fmt.Errorf("unable to update a book, %w", err)
 			}
@@ -289,34 +271,8 @@ func UpdateBook() error {
 }
 
 func DeleteBook() error {
-	file, err := os.Open(fileName)
-	if err != nil {
-		return fmt.Errorf("unable to delete a book, file not found %w", err)
-	}
-	defer file.Close()
-
-	// baca isi file data csv
-	scanner := bufio.NewScanner(file)
-	// lakukan pembacaan data per baris berulang-ulang
-	for scanner.Scan() {
-		row := strings.Split(scanner.Text(), ",")
-		// row := scanner.Text()
-		// fmt.Printf("%T\n", row)
-		id, _ := strconv.Atoi(row[0])
-		pages, _ := strconv.Atoi(row[4])
-		book := Book{
-			Id: id,
-			Title: row[1],
-			Author: row[2],
-			ReleaseYear: row[3],
-			Pages: pages,
-		}
-		books = append(books, book)
-		// fmt.Println(books)
-	}
-	
 	// masukin id buku yang mau diganti detailnya
-	scanner = bufio.NewScanner(os.Stdin)
+	scanner := bufio.NewScanner(os.Stdin)
 	
 	fmt.Print("Enter book id that you want to delete: ")
 	scanner.Scan()
@@ -338,7 +294,7 @@ func DeleteBook() error {
 			books = append(books[:index], books[index+1:]...)
 			
 			// overwrite the csv file
-			file, err = os.OpenFile(fileName, os.O_TRUNC|os.O_RDWR, 0666)
+			file, err := os.OpenFile(fileName, os.O_TRUNC|os.O_RDWR, 0666)
 			if err != nil {
 				return fmt.Errorf("unable to update a book, %w", err)
 			}
